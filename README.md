@@ -27,3 +27,7 @@ Before using this API Class, be awared you have had known that accurated measure
 ## other
 
 Before birdEye transform, Calibration of camera is needed! here is a [link](http://tanzby.cn/2017/08/01/%E5%9F%BA%E4%BA%8EopenCV%E7%9A%84%E7%9B%B8%E6%9C%BA%E6%A0%A1%E6%AD%A3%E7%A8%8B%E5%BA%8F/) for calibration. 
+
+
+
+g++  -o cali calibrationProgram.cpp  -std=c++11  `pkg-config --cflags --libs opencv` -lpthread
