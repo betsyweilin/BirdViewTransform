@@ -15,7 +15,7 @@ int main()
 	BirdView b("config.yml");
 
 	b.setCarSize(240, 380); 
-	b.setChessSize(60);
+	b.setChessSize(60,60);
 	b.setMaskHeigth(200);
 	b.setInternalShift(27,27);
 

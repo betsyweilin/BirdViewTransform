@@ -1,6 +1,7 @@
-#include <opencv2\opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 #define oo 1E9
 #define CAM_WIDTH 720
@@ -88,9 +89,11 @@ void display(bool calibrationed = 0)
 {
 	while (1)
 	{
+		cout << "\n display 0   enter!\n" << calibrationed;
 		unique_lock<mutex> lock_1(Mutex_missionFinish), lock_2(Mutex_imageBuf);
+		cout << "\n display  1 enter! \n" << calibrationed;
 		v >> imageBuf;
-		
+		cout << "\n display   2 enter! \n" << calibrationed;
 		if(calibrationed)
 			remap(imageBuf, imageBuf, mapx, mapy, CV_INTER_LINEAR);
 		imshow(WINDOWSNAME, imageBuf);
@@ -108,17 +111,20 @@ void display(bool calibrationed = 0)
 void chessCheck(int num)
 {
 	missionFinish = false; //任务开始标志
-
+        cout << "\n chesscheck  enter!";
 	thread([] {display(0); }).detach(); // 用来显示实时图像
-
+	cout << "\n chesscheck  enter1!";
+	this_thread::sleep_for(chrono::seconds(5));
 	thread([&]()
-	{
+	{	cout << "\n chesscheck  enter11!";
 		int frameFound = 0,frameNeed = num,timeCount = 0;
-
+		cout << "\n chesscheck  enter2!";
 		while (1)
 		{
+			cout << "\n chesscheck  enter3!";
 			unique_lock<mutex> lock_1(Mutex_missionFinish), lock_2(Mutex_imageBuf);
 			Mat gray;
+			cout << "\n chesscheck  enter4!";
 			cvtColor(imageBuf, gray, CV_BGR2GRAY);
 			patternFind = findChessboardCorners(gray, board_size, corners, CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE + CALIB_CB_FAST_CHECK);
 			if (patternFind)
@@ -151,6 +157,7 @@ void chessCheck(int num)
 			this_thread::sleep_for(chrono::seconds(2));
 		}
 	}).detach();
+
 }
 
 void calibration()
@@ -160,6 +167,7 @@ void calibration()
 	{
 		for (int j = 0; j<board_size.width; j++)
 		{
+			cout << "\n i: "<<i<<"j:"<<j;
 			/* 假设定标板放在世界坐标系中z=0的平面上 */
 			Point3f tempPoint;
 			tempPoint.x = i*100;
@@ -168,8 +176,11 @@ void calibration()
 			tempPointSet.push_back(tempPoint);
 		}
 	}
-	for(int i = 0 ; i < usedImageForCalib; i++) object_Points.push_back(tempPointSet);
-
+	for(int i = 0 ; i < usedImageForCalib; i++) 
+	{
+		cout << "\n useimg for cali i: "<<i;
+		object_Points.push_back(tempPointSet);
+	}
 	Size image_size = Size(CAM_WIDTH, CAM_HEIGTH);
 	vector<cv::Vec3d> rotation_vectors;    /* 每幅图像的旋转向量 */
 	vector<cv::Vec3d> translation_vectors; /* 每幅图像的平移向量 */
@@ -180,6 +191,7 @@ void calibration()
 
 	/*******由相机的定义使用两个不同的矫正方法*******/
 	if(FISH_EYE)
+	{
 		fisheye::calibrate(
 			object_Points,
 			corners_Seq,
@@ -189,7 +201,9 @@ void calibration()
 			rotation_vectors,
 			translation_vectors,
 			flags, cv::TermCriteria(3, 20, 1e-6));
+	}
 	else
+	{	
 		cv::calibrateCamera(
 			object_Points,
 			corners_Seq,
@@ -198,6 +212,7 @@ void calibration()
 			distortion_coeffs,
 			rotation_vectors,
 			translation_vectors, 0, cv::TermCriteria(3, 20, 1e-6));
+	}
 
 	Mat R = Mat::eye(3, 3, CV_32F);
 	Mat newIn;
@@ -215,18 +230,19 @@ int main()
 	cout << "Calib cam ID is : ";
 	cin >> camID;
 
-	v.open(0);
+	v.open(camID);
 
-	if (!v.isOpened()) return 0;
+	if (!v.isOpened()) {cout << "not opened!";return 0;}
 	else
 	{
+		cout << " opened!"<<"\n CAP_PROP_FRAME_WIDTH:"<< CAP_PROP_FRAME_HEIGHT <<"\n CAM_HEIGTH:"<<CAM_HEIGTH <<"\n CAP_PROP_FRAME_WIDTH :"<<CAP_PROP_FRAME_WIDTH<<"\n CAM_WIDTH:"<<CAM_WIDTH;
 		v.set(CAP_PROP_FRAME_HEIGHT, CAM_HEIGTH);
 		v.set(CAP_PROP_FRAME_WIDTH, CAM_WIDTH);
 	}
 
 	if (!read())
 	{
-		cout << "******* Checking Board Start *******" << endl;
+		cout << "\n ******* Checking Board Start *******" << endl;
 		chessCheck(usedImageForCalib);
 		while (1)
 		{
